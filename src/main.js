@@ -21,12 +21,20 @@ function calculateSimpleRevenue(purchase, _product) {
  * @returns {number}
  */
 function calculateBonusByProfit(index, total, seller) {
-  // Расчет бонуса от позиции в рейтинге — возвращаем коэффициент
-  // index: позиция в рейтинге (0 = 1-е место), total: общее число продавцов
-  if (index === 0) return 0.15; // 15% для первого
-  if (index === 1 || index === 2) return 0.1; // 10% для 2-го и 3-го
-  if (index === total - 1) return 0; // 0% для последнего
-  return 0.05; // 5% для всех остальных
+  let coef = 0.05; // По умолчанию 5%
+
+  if (index === 0) {
+    coef = 0.15; // 15% для первого
+  } else if (index === 1 || index === 2) {
+    coef = 0.1; // 10% для 2-го и 3-го
+  } else if (index === total - 1) {
+    coef = 0; // 0% для последнего
+  }
+
+  // ВАЖНО: Тест ожидает итоговую сумму.
+  // Берем прибыль из объекта seller и умножаем на коэффициент.
+  const profit = seller.profit || 0;
+  return profit * coef;
 }
 
 /**
@@ -146,12 +154,11 @@ function analyzeSalesData(data, options) {
   const totalSellers = sellerStats.length;
   sellerStats.forEach((seller, index) => {
     // Получаем коэффициент бонуса от переданной функции calculateBonus
-    const coef = calculateBonus(index, totalSellers, seller);
+    const bonusAmount = calculateBonus(index, totalSellers, seller);
 
     // Бонус начисляем как процент от положительной прибыли
     const profitValue = Math.max(0, Number(seller.profit) || 0);
-    const bonusAmount =
-      typeof coef === 'number' && coef > 0 ? profitValue * coef : 0;
+    seller.bonus = Number((Number(bonusAmount) || 0).toFixed(2));
     seller.bonus = Number(bonusAmount.toFixed(2));
 
     // Формируем топ-10 проданных товаров: [{sku, quantity}]
